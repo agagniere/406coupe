@@ -32,11 +32,10 @@ while (my $line = <STDIN>)
 	if ($line =~ /"urls_large":\[(.+?)\]/) {
 		my $urls = $1;
 		while ($urls =~ /"(.+?\/(\w+\.[a-z]+))",?/g ) {
-#			system "curl -O $1";
+			system "curl -O $1";
 			push @{$result{"Pictures"}}, $2
 		}
 	}
-
 	foreach my $key ( qw(brand issuance_date model vehicle_type vehicule_color) ) {
 		if ($line =~ /"key":"$key","value":"(.+?)"/) {
 			$result{$key} = $1;
@@ -54,8 +53,6 @@ while (my $line = <STDIN>)
 		}
 	}
 }
-
-#print Dumper(\%result);
 
 if (not defined $result{"issuance_date"} and defined $result{"regdate"}) {
 	$result{"issuance_date"} = $result{"regdate"}
