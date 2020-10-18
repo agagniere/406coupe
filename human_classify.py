@@ -2,25 +2,25 @@ from matplotlib import pyplot
 from matplotlib import image as MPL_image
 from matplotlib.widgets import Button
 from PIL import Image as PIL_image
+
 from fastai.data.transforms import get_image_files
 from fastai.vision.data import ImageDataLoaders
 from fastai.vision.augment import Resize
 from fastai.vision.learner import cnn_learner
 from fastai.metrics import error_rate
+from fastai.vision.utils import resize_images
 from torchvision.models import resnet34
+
 import csv
 
 class Feature:
-    images_paths = []
-    labels = []
-    name = ""
-    values = []
-    label_from_string = {}
 
     def __init__(self, name, values):
         self.name = name
         self.values = values
-        self.label_from_string = {str:i for i,str in enumerate(values)}
+        self.label_from_string = {s:i for i,s in enumerate(values)}
+        self.images_paths = []
+        self.labels = []
 
     def add_image(self, path, label):
         self.images_paths += [path]
@@ -42,6 +42,7 @@ class Asker:
         self.current_image = next(self.iterator)
         self.goal_n = goal_n
         self.buttons = []
+        self.count = 0
 
     def add(self, label):
         def callback(event):
@@ -50,6 +51,7 @@ class Asker:
         return callback
 
     def next(self, event):
+        self.count += 1
         try:
             self.current_image = next(self.iterator)
             if len(self.feature.images_paths) > self.goal_n:
@@ -60,9 +62,7 @@ class Asker:
             pyplot.close()
 
     def draw(self):
-        img = PIL_image.open(self.current_image)
-        img.thumbnail((500, 500), PIL_image.ANTIALIAS)
-        self.img_plt.imshow(img)
+        self.img_plt.imshow(PIL_image.open(self.current_image))
         pyplot.draw()
 
     def show(self):
@@ -73,6 +73,7 @@ class Asker:
         self.add_buttons()
         self.draw()
         pyplot.show()
+        return self.count
 
     def add_buttons(self):
         button_count = len(self.feature.values) + 1
@@ -86,21 +87,35 @@ class Asker:
         self.buttons += [Button(pyplot.axes([0.05, outer_margin, 0.2, button_width]), 'None', color=(0.8,0.2,0.2))]
         self.buttons[-1].on_clicked(self.next)
 
-images_paths = get_image_files('.')
+resize_images('manual', dest='thumbs', max_size=448)
+resize_images('pics', dest='thumbs', max_size=448)
+images_paths = get_image_files('thumbs')
 
 rims = Feature("Rims", ["BBS", "Nautilus", "Hoggar", "Tacoma", "Other"])
-tst = Asker(rims, iter(images_paths), goal_n=9)
-tst.show()
+ask = Asker(rims, iter(images_paths))
+seen = ask.show()
 
 rims.output_to_csv("rims.csv")
-if (len(rims.images_paths) > 8):
-    labeled_images = ImageDataLoaders.from_lists('.', rims.images_paths, rims.labels, item_tfms=Resize(224), bs=8)
-    labeled_images.show_batch()
-    pyplot.show()
 
-    learn = cnn_learner(labeled_images, resnet34, metrics=error_rate)
-    learn.fit(3)
+excluded = [pic if not pic in rims.images_paths for pic in images_paths[:seen + 1]]
+labels = [True] * len(rims.images_paths) + [False] * len(excluded)
 
+labeled_images = ImageDataLoaders.from_lists('.', rims.images_paths + excluded, labels, item_tfms=Resize(224), bs=32)
+labeled_images.show_batch()
+pyplot.show()
+
+learn = cnn_learner(labeled_images, resnet34, metrics=error_rate)
+learn.fit(4)
+
+learn.predict()
+
+'''
+labeled_images = ImageDataLoaders.from_lists('.', rims.images_paths, rims.labels, item_tfms=Resize(224), bs=16)
+labeled_images.show_batch()
+pyplot.show()
+'''
+'''
+'''
 '''
 labeled_images = ImageDataLoaders.from_csv(path='.', csv_fname='data.csv',
                                            fn_col=0, label_col=2,
