@@ -8,10 +8,11 @@ from fastai.vision.data import ImageDataLoaders
 from fastai.vision.augment import Resize
 from fastai.vision.learner import cnn_learner
 from fastai.metrics import error_rate
-from fastai.vision.utils import resize_images
+from fastai.vision.utils import resize_images, download_images
 from torchvision.models import resnet34
 
 import csv
+from pathlib import Path
 
 class Feature:
 
@@ -36,7 +37,7 @@ class Feature:
 
 class Asker:
 
-    def __init__(self, feature, image_iterator, goal_n=30):
+    def __init__(self, feature, image_iterator, goal_n=32):
         self.feature = feature
         self.iterator = image_iterator
         self.current_image = next(self.iterator)
@@ -87,8 +88,8 @@ class Asker:
         self.buttons += [Button(pyplot.axes([0.05, outer_margin, 0.2, button_width]), 'None', color=(0.8,0.2,0.2))]
         self.buttons[-1].on_clicked(self.next)
 
-resize_images('manual', dest='thumbs', max_size=448)
-resize_images('pics', dest='thumbs', max_size=448)
+download_images('downloaded', url_file=Path('urls.txt'))
+resize_images('downloaded', dest='thumbs', max_size=448)
 images_paths = get_image_files('thumbs')
 
 rims = Feature("Rims", ["BBS", "Nautilus", "Hoggar", "Tacoma", "Other"])
@@ -97,7 +98,7 @@ seen = ask.show()
 
 rims.output_to_csv("rims.csv")
 
-excluded = [pic if not pic in rims.images_paths for pic in images_paths[:seen + 1]]
+excluded = [pic for pic in images_paths[:seen] if not pic in rims.images_paths]
 labels = [True] * len(rims.images_paths) + [False] * len(excluded)
 
 labeled_images = ImageDataLoaders.from_lists('.', rims.images_paths + excluded, labels, item_tfms=Resize(224), bs=32)
@@ -107,15 +108,18 @@ pyplot.show()
 learn = cnn_learner(labeled_images, resnet34, metrics=error_rate)
 learn.fit(4)
 
-learn.predict()
+for img in images_paths[seen:seen+5]:
+    print(learn.predict(load_image(img)))
 
-'''
+
 labeled_images = ImageDataLoaders.from_lists('.', rims.images_paths, rims.labels, item_tfms=Resize(224), bs=16)
 labeled_images.show_batch()
 pyplot.show()
-'''
-'''
-'''
+
+for img in images_paths[seen:seen+5]:
+    print(learn.predict(load_image(img)))
+
+
 '''
 labeled_images = ImageDataLoaders.from_csv(path='.', csv_fname='data.csv',
                                            fn_col=0, label_col=2,
