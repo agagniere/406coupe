@@ -7,8 +7,9 @@ from fastai.data.transforms import get_image_files
 from fastai.vision.data import ImageDataLoaders
 from fastai.vision.augment import Resize
 from fastai.vision.learner import cnn_learner
-from fastai.metrics import error_rate
 from fastai.vision.utils import resize_images, download_images
+from fastai.vision.core import load_image
+from fastai.metrics import error_rate
 from torchvision.models import resnet34
 
 import csv
@@ -37,13 +38,11 @@ class Feature:
 
 class Asker:
 
-    def __init__(self, feature, image_iterator, goal_n=32):
+    def __init__(self, feature, image_iterator):
         self.feature = feature
         self.iterator = image_iterator
         self.current_image = next(self.iterator)
-        self.goal_n = goal_n
         self.buttons = []
-        self.count = 0
 
     def add(self, label):
         def callback(event):
@@ -52,29 +51,25 @@ class Asker:
         return callback
 
     def next(self, event):
-        self.count += 1
         try:
             self.current_image = next(self.iterator)
-            if len(self.feature.images_paths) > self.goal_n:
-                pyplot.close()
-            else:
-                self.draw()
+            self.draw()
         except StopIteration:
             pyplot.close()
 
     def draw(self):
+        self.img_plt.clear()
+        self.img_plt.axis('off')
         self.img_plt.imshow(PIL_image.open(self.current_image))
         pyplot.draw()
 
     def show(self):
         self.figure, self.img_plt = pyplot.subplots()
-        pyplot.axis('off')
         pyplot.subplots_adjust(left=0.3)
         self.figure.suptitle("What {} can you see ?".format(self.feature.name))
         self.add_buttons()
         self.draw()
         pyplot.show()
-        return self.count
 
     def add_buttons(self):
         button_count = len(self.feature.values) + 1
@@ -88,37 +83,51 @@ class Asker:
         self.buttons += [Button(pyplot.axes([0.05, outer_margin, 0.2, button_width]), 'None', color=(0.8,0.2,0.2))]
         self.buttons[-1].on_clicked(self.next)
 
-download_images('downloaded', url_file=Path('urls.txt'))
-resize_images('downloaded', dest='thumbs', max_size=448)
 images_paths = get_image_files('thumbs')
 
 rims = Feature("Rims", ["BBS", "Nautilus", "Hoggar", "Tacoma", "Other"])
-ask = Asker(rims, iter(images_paths))
-seen = ask.show()
 
-rims.output_to_csv("rims.csv")
+first_batch = images_paths[:20]
 
-excluded = [pic for pic in images_paths[:seen] if not pic in rims.images_paths]
+ask = Asker(rims, iter(first_batch))
+ask.show()
+
+excluded = [pic for pic in first_batch if not pic in rims.images_paths]
 labels = [True] * len(rims.images_paths) + [False] * len(excluded)
 
-labeled_images = ImageDataLoaders.from_lists('.', rims.images_paths + excluded, labels, item_tfms=Resize(224), bs=32)
+print("You have reviewed {} images, classified {} and excluded {}".format(len(first_batch), len(rims.images_paths), len(excluded)))
+
+is_visible = ImageDataLoaders.from_lists('.', rims.images_paths + excluded, labels, item_tfms=Resize(224), bs=16)
+is_visible.show_batch()
+pyplot.show()
+
+guess_visible = cnn_learner(is_visible, resnet34, metrics=error_rate)
+guess_visible.fit(4)
+
+rest = []
+for img in images_paths[20:]:
+    pred, _, conf = guess_visible.predict(img)
+    print("{} {} {}".format(img, pred, conf))
+    if pred == True:
+        rest += [img]
+
+remaining = 33 - len(rims.images_paths)
+if (len(rest) < remaining):
+    print("Not enough images")
+    exit(1)
+
+ask = Asker(rims, iter(rest[:remaining]))
+ask.show()
+
+labeled_images = ImageDataLoaders.from_lists('.', rims.images_paths, rims.labels, item_tfms=Resize(224), bs=32)
 labeled_images.show_batch()
 pyplot.show()
 
-learn = cnn_learner(labeled_images, resnet34, metrics=error_rate)
-learn.fit(4)
+guess_rim = cnn_learner(labeled_images, resnet34, metric=error_rate)
+guess_rim.fit(4)
 
-for img in images_paths[seen:seen+5]:
-    print(learn.predict(load_image(img)))
-
-
-labeled_images = ImageDataLoaders.from_lists('.', rims.images_paths, rims.labels, item_tfms=Resize(224), bs=16)
-labeled_images.show_batch()
-pyplot.show()
-
-for img in images_paths[seen:seen+5]:
-    print(learn.predict(load_image(img)))
-
+for img in rest[remaining:]:
+    print("{} : {}".format(img, guess_rim.predict(img)))
 
 '''
 labeled_images = ImageDataLoaders.from_csv(path='.', csv_fname='data.csv',
