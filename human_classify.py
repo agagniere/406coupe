@@ -10,6 +10,7 @@ from fastai.vision.learner import cnn_learner
 from fastai.vision.utils import resize_images, download_images
 from fastai.vision.core import load_image
 from fastai.metrics import error_rate
+from fastai.interpret import Interpretation
 from torchvision.models import resnet34
 
 import csv
@@ -87,7 +88,8 @@ images_paths = get_image_files('thumbs')
 
 rims = Feature("Rims", ["BBS", "Nautilus", "Hoggar", "Tacoma", "Other"])
 
-first_batch = images_paths[:20]
+REVIEW=33
+first_batch = images_paths[:REVIEW]
 
 ask = Asker(rims, iter(first_batch))
 ask.show()
@@ -97,36 +99,50 @@ labels = [True] * len(rims.images_paths) + [False] * len(excluded)
 
 print("You have reviewed {} images, classified {} and excluded {}".format(len(first_batch), len(rims.images_paths), len(excluded)))
 
-is_visible = ImageDataLoaders.from_lists('.', rims.images_paths + excluded, labels, item_tfms=Resize(224), bs=16)
-is_visible.show_batch()
-pyplot.show()
+transform = Resize(224)
 
+is_visible = ImageDataLoaders.from_lists('.', rims.images_paths + excluded, labels, item_tfms=transform, bs=16, valid_pct=0.25)
 guess_visible = cnn_learner(is_visible, resnet34, metrics=error_rate)
 guess_visible.fit(4)
 
+Interpretation.from_learner(guess_visible).plot_top_losses(4)
+
+for img in images_paths[REVIEW:REVIEW+10]:
+    print(img, guess_visible.predict(img))
+
+guess_visible.fit(4, lr=1e-4)
+
+Interpretation.from_learner(guess_visible).plot_top_losses(4)
+pyplot.show()
+
 rest = []
-for img in images_paths[20:]:
-    pred, _, conf = guess_visible.predict(img)
-    print("{} {} {}".format(img, pred, conf))
-    if pred == True:
+for img in images_paths[REVIEW:]:
+    pred, i, c = guess_visible.predict(img)
+    conf = c[i]
+    print(img, pred, conf)
+    if int(i) == 1 or conf < 0.7:
         rest += [img]
 
-remaining = 33 - len(rims.images_paths)
-if (len(rest) < remaining):
-    print("Not enough images")
-    exit(1)
+print(rest)
 
-ask = Asker(rims, iter(rest[:remaining]))
+ask = Asker(rims, iter(rest))
 ask.show()
 
-labeled_images = ImageDataLoaders.from_lists('.', rims.images_paths, rims.labels, item_tfms=Resize(224), bs=32)
+labeled_images = ImageDataLoaders.from_lists('.', rims.images_paths, rims.labels, item_tfms=transform, bs=16, valid_pct=0.25)
 labeled_images.show_batch()
 pyplot.show()
 
 guess_rim = cnn_learner(labeled_images, resnet34, metric=error_rate)
 guess_rim.fit(4)
 
-for img in rest[remaining:]:
+Interpretation.from_learner(guess_rim).plot_top_losses(4)
+
+guess_rim.fit(4, lr=1e-4)
+
+Interpretation.from_learner(guess_rim).plot_top_losses(4)
+pyplot.show()
+
+for img in rest[30:]:
     print("{} : {}".format(img, guess_rim.predict(img)))
 
 '''
