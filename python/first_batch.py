@@ -2,7 +2,6 @@ from fastai.data.transforms import get_image_files
 from fastai.vision.data import ImageDataLoaders
 from fastai.vision.augment import Resize
 from fastai.vision.learner import cnn_learner
-from fastai.vision.core import load_image
 from fastai.metrics import error_rate
 from fastai.interpret import Interpretation
 from torchvision.models import resnet18
@@ -15,8 +14,9 @@ from Feature import *
 from Asker import *
 
 parser = argparse.ArgumentParser(description="Manually classify a few images")
-parser.add_argument("-i", "--input", type=str, help="An image folder to train from", default="pics")
 parser.add_argument("-b", "--batch-size", type=int, help="Learning batch size", default=16)
+parser.add_argument("-i", "--input", type=str, help="An image folder to train from", default="pics")
+parser.add_argument("-o", "--output", type=str, help="Where to store the model", default="is_visible.pkl")
 parser.add_argument("feature", type=str, help="The feature to train", choices=Features.list)
 args = parser.parse_args()
 
@@ -48,4 +48,4 @@ guess_visible.fit(8, lr=1e-5)
 Interpretation.from_learner(guess_visible).plot_top_losses(4)
 pyplot.show()
 
-guess_visible.export(fname=args.feature + '_visible.pkl')
+guess_visible.export(args.output)

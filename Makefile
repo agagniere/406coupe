@@ -16,10 +16,6 @@ MODELS    = models
 
 # WIP
 FEATURES  = rims front_bumper exterior interior
-#CLASSIFIERS= $(FEATURES:%=$(MODELS)/%.pth)
-#VISIBLE   = $(FEATURES:%=$(MODELS)/%_visible.pth)
-#LABELS    = $(FEATURES:%=%.csv)
-#PARTIALS  = $(FEATURES:%=%_partial.csv)
 
 # Commands used
 PYTHON    = python3
@@ -29,17 +25,15 @@ usage:
 	@echo "make rims to train the rims model"
 
 .PHONY: $(FEATURES)
-$(FEATURES): % : $(MODELS)/%.pth
+$(FEATURES): % : %.pkl
 
-%.csv: $(MODELS)/%.pth
-	@echo Classify images for : $*
-
-%.pth: %_visible.pth
-	@echo Train model for : $*
+# Main training loop
+%.kl: %_visible.pkl | $(THUMBS)
+	$(PYTHON) python/train.py --model $< --csv "$*_partial.csv" --input $| --output $@ $*
 
 # Manually classify a first batch of images
-%_visible.pth: $(THUMBS)
-	$(PYTHON) python/first_batch.py --input $< $*
+%_visible.pkl: | $(THUMBS)
+	$(PYTHON) python/first_batch.py --input $| --output $@ $*
 
 $(THUMBS): $(DOWNLOADS) $(MY_PICS)
 	$(PYTHON) -c "from fastai.vision.utils import resize_images$(foreach folder,$?,; resize_images('$(folder)', dest='$@', max_size=$(THUMB_SIZE)))"

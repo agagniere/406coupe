@@ -12,38 +12,25 @@ import tkinter
 from tkinter import messagebox
 import argparse
 from pathlib import Path
-import os,errno
 
 from Feature import *
 from Asker import *
 
 parser = argparse.ArgumentParser(description="Manually classify a few relevant images")
-parser.add_argument("-i", "--input", type=str, help="An image folder to train from", default="pics")
 parser.add_argument("-b", "--batch-size", type=int, help="Learning batch size", default=32)
-parser.add_argument("-m", "--model", type=argparse.FileType('r'), help="The boolean model to exclude images where the feature is not visible")
+parser.add_argument("-m", "--model", type=argparse.FileType('r'), help="The boolean model to exclude images where the feature is not visible", required=True)
 parser.add_argument("-c", "--csv", type=argparse.FileType('r'), help="Already classified images")
+parser.add_argument("-i", "--input", type=str, help="An image folder to train from", default="pics")
+parser.add_argument("-o", "--output", type=str, help="Where to store the model", default="export.pkl")
 parser.add_argument("feature", type=str, help="The feature to train", choices=Features.list)
 args = parser.parse_args()
 
-if args.model:
-    print("Using provided boolean model")
-    is_visible = load_learner(args.model.name, cpu=False)
-else:
-    is_visible = None
-    print("Using some default boolean model")
-    for fname in map(lambda x: Path(x.format(args.feature)), ["models/{}_visible.pkl", "models/{}_visible.pth", "{}_visible.pkl", "{}_visible.pth"]):
-        if fname.exists():
-            print("using", fname)
-            is_visible = load_learner(fname, cpu=False)
-            break
-    if is_visible == None:
-        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), "[models/]{}_visible.(pth|pkl)".format(args.feature))
-
+is_visible = load_learner(args.model.name, cpu=False)
 feature = Features.from_string(args.feature)
 
 if args.csv:
-    print("Usign csv")
     feature.from_opened_csv(args.csv)
+    print("Using the {} labeled images from CSV".format(args.csv))
 
 images = filter(lambda x: (x not in feature.images_paths) and is_visible.predict(x)[2][1] > 0.6 , get_image_files(args.input))
 
