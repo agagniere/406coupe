@@ -4,4 +4,6 @@ models/
 cache/
 pics/
 *.csv
+*.pkl
+*.pth
 *~

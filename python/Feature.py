@@ -19,6 +19,18 @@ class Feature:
             writer.writerow(['Path', 'Label'])
             writer.writerows(zip(self.images_paths, self.labels))
 
+    def from_csv(self, file_name):
+        with open(file_name, mode='r') as f:
+            self.from_opened_csv(f)
+
+    def from_opened_csv(self, csv_file):
+        reader = csv.reader(csv_file, delimiter=',')
+        for row in reader:
+            self.add_image(*row)
+
+    def __str__(self):
+        return "Feature('{}', {} values, {} images)".format(self.name, len(self.values), len(self.images_paths))
+
 class Features:
     rims = Feature("Rims", ["BBS", "Nautilus", "Hoggar", "Tacoma", "Other"])
     front_bumper = Feature("Front Bumper", ["Phase 1", "Phase 2", "Other"])

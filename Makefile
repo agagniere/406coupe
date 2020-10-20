@@ -4,7 +4,7 @@ MY_PICS   = $(wildcard my_pics)
 MY_ADS    = $(wildcard my_ads)
 
 # Parameters
-THUMB_SIZE= 448
+THUMB_SIZE= 672
 
 # Files and folders that can be created by this makefile
 THUMBS    = pics

@@ -26,7 +26,7 @@ class Asker:
     def draw(self):
         self.img_plt.clear()
         self.img_plt.axis('off')
-        self.img_plt.imshow(PIL_image.open(self.current_image))
+        self.img_plt.imshow(PIL_image.open(self.current_image), animated=True)
         pyplot.draw()
 
     def show(self):
@@ -48,3 +48,15 @@ class Asker:
             self.buttons[-1].on_clicked(self.add(value))
         self.buttons += [Button(pyplot.axes([0.05, outer_margin, 0.2, button_width]), 'None', color=(0.8,0.2,0.2))]
         self.buttons[-1].on_clicked(self.next)
+
+class TrainedAsker(Asker):
+
+    def __init__(self, feature, image_iterator, model):
+        super().__init__(feature, image_iterator)
+        self.model = model
+
+    def draw():
+        super().draw()
+        _, pred_index, coefs = self.model.predict(self.current_image)
+        for i, confidence in enumerate(coefs):
+            self.buttons[i].color = (0.2, confidence, 0.5) if i == pred_index else (confidence)
