@@ -12,38 +12,40 @@ CACHE     = cache
 DOWNLOADS = $(CACHE)/highres
 ADS_URLS  = $(CACHE)/ads_urls.txt
 ALL_URLS  = $(CACHE)/urls.txt
+MODELS    = models
 
 # WIP
 FEATURES  = rims front_bumper exterior interior
-MODELS    = $(FEATURES:%=%.pth)
-VISIBLE   = $(FEATURES:%=%_visible.pth)
-LABELS    = $(FEATURES:%=%.csv)
+#CLASSIFIERS= $(FEATURES:%=$(MODELS)/%.pth)
+#VISIBLE   = $(FEATURES:%=$(MODELS)/%_visible.pth)
+#LABELS    = $(FEATURES:%=%.csv)
 #PARTIALS  = $(FEATURES:%=%_partial.csv)
 
 # Commands used
-PYTHON    = python3 -c
+PYTHON    = python3
 
 usage:
 	@echo "make pics to download and resize all pictures"
 	@echo "make rims to train the rims model"
 
 .PHONY: $(FEATURES)
-$(FEATURES): % : %.pth
+$(FEATURES): % : $(MODELS)/%.pth
 
-%.csv: %.pth
+%.csv: $(MODELS)/%.pth
 	@echo Classify images for : $*
 
 %.pth: %_visible.pth
 	@echo Train model for : $*
 
+# Manually classify a first batch of images
 %_visible.pth: $(THUMBS)
-	@echo Manually classify a first batch of images for : $*
+	$(PYTHON) python/first_batch.py --input $< $*
 
 $(THUMBS): $(DOWNLOADS) $(MY_PICS)
-	$(PYTHON) "from fastai.vision.utils import resize_images$(foreach folder,$?,; resize_images('$(folder)', dest='$@', max_size=$(THUMB_SIZE)))"
+	$(PYTHON) -c "from fastai.vision.utils import resize_images$(foreach folder,$?,; resize_images('$(folder)', dest='$@', max_size=$(THUMB_SIZE)))"
 
 $(DOWNLOADS): $(ALL_URLS)
-	$(PYTHON) "from fastai.vision.utils import download_images ; from pathlib import Path ; download_images('$@', url_file=Path('$<'))"
+	$(PYTHON) -c "from fastai.vision.utils import download_images ; from pathlib import Path ; download_images('$@', url_file=Path('$<'))"
 
 $(ALL_URLS): $(MY_URLS) $(ADS_URLS)
 	sort $^ | uniq > $@
