@@ -15,7 +15,7 @@ ALL_URLS  = $(CACHE)/urls.txt
 MODELS    = models
 
 # WIP
-FEATURES  = rims front_bumper exterior interior
+FEATURES  = rims front_bumper exterior interior engine
 
 # Commands used
 PYTHON    = python3

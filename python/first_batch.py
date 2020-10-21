@@ -30,11 +30,8 @@ while seen == 0 or messagebox.askquestion("Keep going ?", "Do you want to classi
     ask = Asker(feature, iter(batch))
     ask.show()
     seen += args.batch_size
-    # Train with current data to test
-    excluded = [pic for pic in images[:seen] if not pic in feature.images_paths]
-    labels = [True] * len(feature.images_paths) + [False] * len(excluded)
-    print("You have reviewed {} images, classified {} and excluded {}".format(seen, len(feature.images_paths), len(excluded)))
-    is_visible = ImageDataLoaders.from_lists('.', feature.images_paths + excluded, labels, item_tfms=Resize(224), bs=args.batch_size, valid_pct=0.25)
+    print("You have reviewed {} images, classified {} and excluded {}".format(seen, len(feature), len(feature.not_visible)))
+    is_visible = ImageDataLoaders.from_lists('.', *feature.boolean_training(), item_tfms=Resize(224), bs=args.batch_size, valid_pct=0.25)
     guess_visible = cnn_learner(is_visible, resnet18, metrics=error_rate)
     guess_visible.fit(3)
     guess_visible.fit(4, lr=1e-4)
