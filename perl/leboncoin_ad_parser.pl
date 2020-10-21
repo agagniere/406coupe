@@ -57,10 +57,4 @@ if (not defined $result{"issuance_date"} and defined $result{"regdate"}) {
 	$result{"issuance_date"} = $result{"regdate"}
 }
 
-foreach my $pic (@{$result{"Pictures"}}) {
-	print "$pic,$result{horse_power_din},$result{regdate},$result{gearbox_id},$result{fuel_id},$result{Price},$result{mileage},$result{vehicule_color}\n"
-}
-
-open(FH, '>>', "ads.csv") or die $!;
-print FH "$result{Price},$result{City},$result{brand},$result{model},$result{vehicle_type},$result{issuance_date},$result{mileage},$result{horse_power_din},$result{fuel},$result{gearbox},$result{vehicule_color},$result{Link}\n";
-close(FH);
+print "$result{Price},$result{City},$result{brand},$result{model},$result{vehicle_type},$result{issuance_date},$result{mileage},$result{horse_power_din},$result{fuel},$result{gearbox},$result{vehicule_color},$result{Link}\n";
