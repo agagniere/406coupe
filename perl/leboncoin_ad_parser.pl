@@ -32,7 +32,6 @@ while (my $line = <STDIN>)
 	if ($line =~ /"urls_large":\[(.+?)\]/) {
 		my $urls = $1;
 		while ($urls =~ /"(.+?\/(\w+\.[a-z]+))",?/g ) {
-			system "curl -O $1";
 			push @{$result{"Pictures"}}, $2
 		}
 	}

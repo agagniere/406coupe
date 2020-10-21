@@ -25,6 +25,7 @@ class Feature:
 
     def from_opened_csv(self, csv_file):
         reader = csv.reader(csv_file, delimiter=',')
+        next(reader)
         for row in reader:
             self.add_image(*row)
 
