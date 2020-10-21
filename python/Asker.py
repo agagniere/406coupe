@@ -55,8 +55,9 @@ class TrainedAsker(Asker):
         super().__init__(feature, image_iterator)
         self.model = model
 
-    def draw():
+    def draw(self):
         super().draw()
         _, pred_index, coefs = self.model.predict(self.current_image)
         for i, confidence in enumerate(coefs):
-            self.buttons[i].color = (0.2, confidence, 0.5) if i == pred_index else (confidence)
+            c = float(confidence)
+            self.buttons[i].color = (0.2, c, 0.5) if i == pred_index else (c,c,c)

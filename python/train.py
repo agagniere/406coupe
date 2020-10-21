@@ -51,7 +51,7 @@ labeled_images = ImageDataLoaders.from_lists('.', feature.images_paths, feature.
 classifier = cnn_learner(labeled_images, resnet34, metrics=error_rate)
 classifier.fit(4)
 while seen == 0 or messagebox.askquestion("Keep going ?", "Do you want to classify one more batch ?") == 'yes':
-    batch = images[:args.batch_size]
+    batch = images[seen:][:args.batch_size]
     ask = TrainedAsker(feature, iter(batch), classifier)
     ask.show()
     seen += args.batch_size
@@ -60,14 +60,14 @@ while seen == 0 or messagebox.askquestion("Keep going ?", "Do you want to classi
                                                  bs=args.batch_size, valid_pct=0.25)
     classifier = cnn_learner(labeled_images, resnet34, metrics=error_rate)
     classifier.fit(4)
-    Interpretation.from_learner(guess_visible).plot_top_losses(9)
+    Interpretation.from_learner(classifier).plot_top_losses(9)
     pyplot.show()
 
 feature.to_csv("{}.csv".format(args.feature))
 
 classifier.fit(4, lr=1e-4)
 classifier.fit(8, lr=1e-5)
-Interpretation.from_learner(guess_visible).plot_top_losses(9)
+Interpretation.from_learner(classifier).plot_top_losses(9)
 pyplot.show()
 
 classifier.export(args.output)
