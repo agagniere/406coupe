@@ -50,11 +50,11 @@ class Asker:
         size = [(total - 2 * outer - (count - 1) * inter) / count for count, outer, inter, total in zip(button_count, outer_margin, inter_margin, total_size)]
         slots = [[outer + i * (button + inter) for i in range(count)] for count, outer, inter, button in zip(button_count, outer_margin, inter_margin, size)]
         for slot, value in zip(slots[1], self.feature.values):
-            self.buttons += [Button(pyplot.axes([slot[0][0], slot] + size[:2]), value, color=(0.3, 0.4, 0.7))]
+            self.buttons += [Button(pyplot.axes([slots[0][0], slot] + size[:2]), value, color=(0.3, 0.4, 0.7))]
             self.buttons[-1].on_clicked(self.add(value))
-        self.buttons += [Button(pyplot.axes([slot[0][1], slot[2][1]] + size[::2]), 'Not visible', color=(0.6, 0.3, 0.3))]
+        self.buttons += [Button(pyplot.axes([slots[0][1], slots[2][1]] + size[::2]), 'Not visible', color=(0.6, 0.3, 0.3))]
         self.buttons[-1].on_clicked(self.not_visible)
-        self.buttons += [Button(pyplot.axes([slot[0][1], slot[2][0]] + size[::2]), 'Discard', color=(0.8, 0.2, 0.2))]
+        self.buttons += [Button(pyplot.axes([slots[0][1], slots[2][0]] + size[::2]), 'Discard', color=(0.8, 0.2, 0.2))]
         self.buttons[-1].on_clicked(self.next)
 
 class TrainedAsker(Asker):
