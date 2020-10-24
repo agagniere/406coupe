@@ -4,56 +4,83 @@ MY_PICS   = $(wildcard my_pics)
 MY_ADS    = $(wildcard my_ads)
 
 # Parameters
-THUMB_SIZE= 672
+THUMB_SIZE ?= 672
+PAGES      ?= 10
 
 # Files and folders that can be created by this makefile
-THUMBS    = pics
 CACHE     = cache
-DOWNLOADS = $(CACHE)/highres
-ADS_URLS  = $(CACHE)/ads_urls.txt
-ALL_URLS  = $(CACHE)/urls.txt
-MODELS    = models
-
-# WIP
-FEATURES  = rims front_bumper exterior interior engine
+DOWNLOADS = $(CACHE)/images
+ADPIC_URLS= $(CACHE)/adpic_urls.txt
+ADLISTS   = $(CACHE)/pages
+ADLIST    = $(CACHE)/ads.txt
+ADS       = ads
+ADS_CSV   = ads.csv
 
 # Commands used
 PYTHON    = python3
 
+# ===== Colors =====
+EOC:="\033[0m"
+BLACK:="\033[1;30m"
+RED:="\033[1;31m"
+GREEN:="\033[1;32m"
+YELLOW:="\033[1;33m"
+PURPLE:="\033[1;35m"
+CYAN:="\033[1;36m"
+WHITE:="\033[1;37m"
+# ==================
+
 usage:
 	@echo "make pics to download and resize all pictures"
-	@echo "make rims to train the rims model"
+	@echo "make leboncoin to download most recent ads list"
 
-.PHONY: $(FEATURES)
-$(FEATURES): % : %.pkl
+leboncoin: | $(ADLISTS)
+	@echo $(CYAN)"Dowloading the $(PAGES) first pages"$(EOC)
+	seq $(PAGES) | parallel --bar 'wget "https://www.leboncoin.fr/recherche/?category=2&brand=Peugeot&model=406&vehicle_type=coupe&page={}" --no-clobber -qO $|/{}.html' || true
 
-# Main training loop
-%.kl: %_visible.pkl | $(THUMBS)
-	$(PYTHON) python/train.py --model $< --csv "$*_partial.csv" --input $| --output $@ $*
+pics: $(THUMBS)
 
-# Manually classify a first batch of images
-%_visible.pkl: | $(THUMBS)
-	$(PYTHON) python/first_batch.py --input $| --output $@ $*
+adcsv: $(ADS_CSV)
 
-$(THUMBS): $(DOWNLOADS) $(MY_PICS)
-	$(PYTHON) -c "from fastai.vision.utils import resize_images$(foreach folder,$?,; resize_images('$(folder)', dest='$@', max_size=$(THUMB_SIZE)))"
+status: $(MY_ADS) $(MY_ADS) $(ADLIST) $(ADPIC_URLS)
+	@echo -n $(WHITE)
+	@printf "You provided %i images, %i urls and %i ads\n" $$(ls $(MY_PICS) | wc -l) $$(cat $(MY_URLS) | wc -l) $$(ls $(MY_ADS) | wc -l)
+	@printf "Downloaded %i out of %i known ads from leboncoin\n" $$(ls $(ADS) | wc -l) $$(cat $(ADLIST) | wc -l)
+	@printf "Ads (including yours) provide %i urls\n" $$(cat $(ADPIC_URLS) | wc -l)
+	@echo -n $(EOC)
 
-$(DOWNLOADS): $(ALL_URLS)
-	$(PYTHON) -c "from fastai.vision.utils import download_images ; from pathlib import Path ; download_images('$@', url_file=Path('$<'))"
+# -------------------------------------------
 
-$(ALL_URLS): $(MY_URLS) $(ADS_URLS)
-	sort $^ | uniq > $@
+$(THUMBS): $(MY_PICS) $(DOWNLOADS)
+	imgp --mute --res $(THUMB_SIZE)x$(THUMB_SIZE) --overwrite $^
 
-$(ADS_URLS): $(wildcard $(MY_ADS)/*.html) | $(CACHE)
-	cat $^ | perl perl/leboncoin_get_urls.pl > $@
+$(DOWNLOADS): $(MY_URLS) $(ADPIC_URLS)
+	cat $^ | parallel --bar wget {} --quiet --no-clobber -P $@
 
-$(CACHE):
-	mkdir $@
+$(ADS_CSV): $(wildcard $(MY_ADS)/*.html $(ADS)/*.htm)
+	( ls $? | parallel --bar perl "perl/leboncoin_ad_parser.pl < {} 2>/dev/null" ) >> $@
+	sort --unique $@ -o $@
+
+$(ADPIC_URLS): $(wildcard $(MY_ADS)/*.html $(ADS)/*.htm) | $(CACHE)
+	cat $? | perl perl/leboncoin_get_urls.pl >> $@
+	sort --unique $@ -o $@
+
+$(ADS): $(ADLIST)
+	@echo $(CYAN)$(shell cat $< | wc -l ) "ads to download"$(EOC)
+	cat $< | head -250 | tail -100 | parallel --bar wget 'https://www.leboncoin.fr{} --no-clobber -qP $@'
+
+$(ADLIST): $(wildcard $(ADLISTS)/*.html)
+	grep --no-filename --only-matching --perl-regexp '/voitures/\d+?.htm' $? >> $@
+	sort --unique $@ -o $@
+
+$(CACHE) $(ADLISTS) $(MY_PICS) $(MY_ADS):
+	mkdir -p $@
 
 clean:
+	$(RM) -r $(ADLIST) $(ADPIC_URLS)
+
+fclean: #clean
 	$(RM) -r $(CACHE)
+#$(ADLISTS) $(DOWNLOADS)
 
-fclean: clean
-	$(RM) -r $(THUMBS)
-
-.PHONY: clean fclean
+.PHONY: clean fclean leboncoin pics adcsv

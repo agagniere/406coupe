@@ -1,9 +1,13 @@
 my_pics/
 my_ads/
-models/
 cache/
-pics/
+
 *.csv
+
 *.pkl
 *.pth
+
 *~
+
+*.jpg
+*.JPG
