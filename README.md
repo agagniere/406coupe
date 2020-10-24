@@ -20,7 +20,7 @@ To download the list of ads from the 15 first pages :
 make leboncoin PAGES=15
 ```
 
-To download and resize all known images, so that its smallest dimension is 450 :
+To download and resize all known images, so that it fits in a 450x450 square :
 ```bash
 make pics THUMB_SIZE=450
 ```
