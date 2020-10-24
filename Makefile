@@ -30,6 +30,8 @@ CYAN:="\033[1;36m"
 WHITE:="\033[1;37m"
 # ==================
 
+PROVIDED=$(wildcard $(MY_PICS)/*.jpg $(MY_PICS)/*.png)
+
 usage:
 	@echo "make pics to download and resize all pictures"
 	@echo "make leboncoin to download most recent ads list"
@@ -38,13 +40,17 @@ leboncoin: | $(ADLISTS)
 	@echo $(CYAN)"Dowloading the $(PAGES) first pages"$(EOC)
 	seq $(PAGES) | parallel --bar 'wget "https://www.leboncoin.fr/recherche/?category=2&brand=Peugeot&model=406&vehicle_type=coupe&page={}" --no-clobber -qO $|/{}.html' || true
 
-pics: $(IMAGES)
+pics: $(ADPIC_URLS)
+	@$(MAKE) convert_pics --no-print-directory
+
+convert_pics: $(shell cat $(ADPIC_URLS) | sed "s|https:/|$(IMAGES)|")
+	imgp --convert --mute --res $(THUMB_SIZE)x$(THUMB_SIZE) --overwrite $(^D)
 
 adcsv: $(ADS_CSV)
 
 status: $(MY_ADS) $(MY_ADS) $(ADLIST) $(ADPIC_URLS)
 	@echo -n $(WHITE)
-	@printf "Data set : %i images\m" $$(ls $(IMAGES) | wc -l)
+	@printf "Data set : %i images\n" $$(ls $(IMAGES) | wc -l)
 	@printf "You provided %i images, %i urls and %i ads\n" $$(ls $(MY_PICS) | wc -l) $$(cat $(MY_URLS) | wc -l) $$(ls $(MY_ADS) | wc -l)
 	@printf "Downloaded %i out of %i known ads from leboncoin\n" $$(ls $(ADS) | wc -l) $$(cat $(ADLIST) | wc -l)
 	@printf "Ads (including yours) provide %i urls\n" $$(cat $(ADPIC_URLS) | wc -l)
@@ -52,9 +58,15 @@ status: $(MY_ADS) $(MY_ADS) $(ADLIST) $(ADPIC_URLS)
 
 # -------------------------------------------
 
-$(IMAGES): $(MY_URLS) $(ADPIC_URLS)
-	cat $^ | parallel --bar wget {} --quiet --no-clobber -P $@ || true
-	imgp --mute --res $(THUMB_SIZE)x$(THUMB_SIZE) --overwrite $@
+$(IMAGES)/%.jpg:
+	wget "https://$*.jpg" --no-clobber --quiet -P $(@D)
+
+#$(IMAGES)/%.jpg $(IMAGES)/%.JPG: | $(MY_URLS)
+#	wget $$(grep $* $(MY_URLS)) --no-clobber --quiet -O $@
+
+#$(IMAGES): $(MY_URLS) $(ADPIC_URLS)
+#	cat $^ | parallel --bar wget {} --quiet --no-clobber -P $@ || true
+#	imgp --convert --mute --res $(THUMB_SIZE)x$(THUMB_SIZE) --overwrite $@
 
 $(ADS_CSV): $(wildcard $(MY_ADS)/*.html $(ADS)/*.htm)
 	( ls $? | parallel --bar perl "perl/leboncoin_ad_parser.pl < {} 2>/dev/null" ) >> $@
@@ -66,7 +78,7 @@ $(ADPIC_URLS): $(wildcard $(MY_ADS)/*.html $(ADS)/*.htm) | $(CACHE)
 
 $(ADS): $(ADLIST)
 	@echo $(CYAN)$(shell cat $< | wc -l ) "ads to download"$(EOC)
-	cat $< | head -250 | tail -100 | parallel --bar wget 'https://www.leboncoin.fr{} --no-clobber -qP $@'
+	cat $< | head -280 | tail | parallel --bar wget 'https://www.leboncoin.fr{} --no-clobber -P $@'
 
 $(ADLIST): $(wildcard $(ADLISTS)/*.html)
 	grep --no-filename --only-matching --perl-regexp '/voitures/\d+?.htm' $? >> $@
@@ -78,8 +90,7 @@ $(CACHE) $(ADLISTS) $(MY_PICS) $(MY_ADS):
 clean:
 	$(RM) -r $(ADLIST) $(ADPIC_URLS)
 
-fclean: #clean
+fclean:
 	$(RM) -r $(CACHE)
-#$(ADLISTS) $(DOWNLOADS)
 
 .PHONY: clean fclean leboncoin pics adcsv
