@@ -9,7 +9,7 @@ PAGES      ?= 10
 
 # Files and folders that can be created by this makefile
 CACHE     = cache
-DOWNLOADS = $(CACHE)/images
+IMAGES    = $(CACHE)/images
 ADPIC_URLS= $(CACHE)/adpic_urls.txt
 ADLISTS   = $(CACHE)/pages
 ADLIST    = $(CACHE)/ads.txt
@@ -38,12 +38,13 @@ leboncoin: | $(ADLISTS)
 	@echo $(CYAN)"Dowloading the $(PAGES) first pages"$(EOC)
 	seq $(PAGES) | parallel --bar 'wget "https://www.leboncoin.fr/recherche/?category=2&brand=Peugeot&model=406&vehicle_type=coupe&page={}" --no-clobber -qO $|/{}.html' || true
 
-pics: $(THUMBS)
+pics: $(IMAGES)
 
 adcsv: $(ADS_CSV)
 
 status: $(MY_ADS) $(MY_ADS) $(ADLIST) $(ADPIC_URLS)
 	@echo -n $(WHITE)
+	@printf "Data set : %i images\m" $$(ls $(IMAGES) | wc -l)
 	@printf "You provided %i images, %i urls and %i ads\n" $$(ls $(MY_PICS) | wc -l) $$(cat $(MY_URLS) | wc -l) $$(ls $(MY_ADS) | wc -l)
 	@printf "Downloaded %i out of %i known ads from leboncoin\n" $$(ls $(ADS) | wc -l) $$(cat $(ADLIST) | wc -l)
 	@printf "Ads (including yours) provide %i urls\n" $$(cat $(ADPIC_URLS) | wc -l)
@@ -51,11 +52,9 @@ status: $(MY_ADS) $(MY_ADS) $(ADLIST) $(ADPIC_URLS)
 
 # -------------------------------------------
 
-$(THUMBS): $(MY_PICS) $(DOWNLOADS)
-	imgp --mute --res $(THUMB_SIZE)x$(THUMB_SIZE) --overwrite $^
-
-$(DOWNLOADS): $(MY_URLS) $(ADPIC_URLS)
-	cat $^ | parallel --bar wget {} --quiet --no-clobber -P $@
+$(IMAGES): $(MY_URLS) $(ADPIC_URLS)
+	cat $^ | parallel --bar wget {} --quiet --no-clobber -P $@ || true
+	imgp --mute --res $(THUMB_SIZE)x$(THUMB_SIZE) --overwrite $@
 
 $(ADS_CSV): $(wildcard $(MY_ADS)/*.html $(ADS)/*.htm)
 	( ls $? | parallel --bar perl "perl/leboncoin_ad_parser.pl < {} 2>/dev/null" ) >> $@
