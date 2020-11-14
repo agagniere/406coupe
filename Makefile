@@ -4,10 +4,10 @@ MY_PICS   = $(wildcard my_pics)
 MY_ADS    = $(wildcard my_ads)
 
 # Parameters
-THUMB_SIZE ?= 672
+THUMB_SIZE ?= 900
 PAGES      ?= 10
-AD_LIMIT   ?= 50
-AD_COUNT   ?= 50
+AD_LIMIT   ?= 100
+AD_COUNT   ?= 100
 
 # Files and folders that can be created by this makefile
 CACHE     = cache

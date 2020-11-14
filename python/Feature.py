@@ -11,6 +11,10 @@ class Feature:
         self.years = years
         self.label_from_string = {s:i for i,s in enumerate(values)}
 
+    def __len__(self):
+        return len(self.values)
+
+
     def __str__(self):
         return "Feature('{}', {} values)".format(self.name, len(self.values))
 
@@ -40,7 +44,7 @@ class Features:
         [(START, 1999), (1999, 2002), (2001, END), (2002, END), (START, 1999), (1999, END)])
 
     dict = {'rims':rims, 'front_bumper':front_bumper, 'interior':interior, 'exterior':exterior, 'engine':engine}
-    list = list(dict.keys())
+    list = list(dict.values())
 
     @classmethod
     def from_string(cls, s):

@@ -1,6 +1,7 @@
 my_pics/
 my_ads/
 cache/
+ads/
 
 *.csv
 
