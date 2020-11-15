@@ -55,7 +55,7 @@ class Asker:
         N = len(self.features)
         total_size   = [0.5] + [1.] * N
         button_count = [N] + [len(feature) for feature in self.features]
-        outer_margin = [0.01] * (N + 1)
+        outer_margin = [0.005] * (N + 1)
         inter_margin = [0.005] * (N + 1)
         sizes = [(total - 2 * outer - (count - 1) * inter) / count for count, outer, inter, total in zip(button_count, outer_margin, inter_margin, total_size)]
         slots = [[outer + i * (button + inter) for i in range(count)] for count, outer, inter, button in zip(button_count, outer_margin, inter_margin, sizes)]
@@ -65,5 +65,5 @@ class Asker:
             for label, y in zip(feature.values, slot):
                 self.buttons += [Button(pyplot.axes([x, y, width, height]), label, color=color, hovercolor=color)]
                 self.buttons[-1].on_clicked(self.select(label, self.buttons[-1]))
-        self.buttons += [Button(pyplot.axes([0.5, 0.005, 0.49, 0.09]), 'Next', color=(0.9, 1, 0.9))]
+        self.buttons += [Button(pyplot.axes([0.5, 0.005, 0.495, 0.09]), 'Next', color=(0.9, 1, 0.9))]
         self.buttons[-1].on_clicked(self.next)

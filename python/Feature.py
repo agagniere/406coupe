@@ -34,18 +34,19 @@ class Features:
 
     exterior = Feature(
         "Exterior",
-        ["Cendré", "Thallium", "Hadès", "Cosmos", "Riviera", "Hypérion", "Bysance", "Récife", "Ecarlate", "Lucifer", "Lugano", "Polo", "Solstice", "Louxor", "Granit"])
+        ["Cendré",  "Thallium", "Hadès",   "Cosmos",    "Riviera",   "Hypérion","Bysance",   "Récife",  "Ecarlate", "Lucifer",   "Lugano",   "Polo",      "Solstice", "Louxor",    "Granit"],
+        [(2004,END),(START,END),(2000,END),(START,2002),(START,2001),(2001,END),(START,2002),(2002,END),(START,END),(START,2003),(START,200),(START,2003),(2001,2004),(START,2001),(2002,END)])
 
     engine = Feature(
         "Engine",
         ["XU10J4R 135", "EW10J4 137", "HDi",       "2.2 160",   "V6 194",      "V6 210"],
         [(START, 1999), (1999, 2002), (2001, END), (2002, END), (START, 1999), (1999, END)])
 
-    option = Feature(
+    options = Feature(
         "Options",
-        ["Wing", "Sunroof", "Speed regulator", "Hitch"])
+        ["Wing", "Sunroof", "Speed regulator", "Hitch", "Oil thermometer"])
 
-    dict = {'rims':rims, 'front_bumper':front_bumper, 'interior':interior, 'exterior':exterior, 'engine':engine, 'misc':misc}
+    dict = {'rims':rims, 'front_bumper':front_bumper, 'interior':interior, 'exterior':exterior, 'engine':engine, 'options':options}
     list = list(dict.values())
 
     @classmethod
