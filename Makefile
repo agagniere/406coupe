@@ -29,7 +29,7 @@ GREEN := "\033[1;32m"
 YELLOW:= "\033[1;33m"
 PURPLE:= "\033[1;35m"
 CYAN  := "\033[1;36m"
-WHITE := "\033[1;37m"
+WHITE := "\033[1;97m"
 # ==================
 
 PROVIDED=$(wildcard $(MY_PICS)/*.jpg $(MY_PICS)/*.png)
@@ -38,6 +38,9 @@ MOVED=$(PROVIDED:$(MY_PICS)/%=$(IMAGES)/%)
 usage:
 	@echo "make pics to download and resize all pictures"
 	@echo "make leboncoin to download most recent ads list"
+
+train:
+	$(PYTHON) python/train.py
 
 leboncoin: | $(ADLISTS)
 	@echo $(CYAN)"Dowloading the $(PAGES) first pages"$(EOC)
@@ -89,9 +92,9 @@ $(CACHE) $(ADLISTS) $(MY_PICS) $(MY_ADS):
 	mkdir -p $@
 
 clean:
-	$(RM) -r $(ADLIST) $(ADPIC_URLS)
+	$(RM) -r $(ADLIST) $(ADPIC_URLS) $(ADLISTS)
 
-fclean: clean
-	$(RM) -r $(IMAGES) $(ADLISTS)
+clean_pics:
+	$(RM) -r $(IMAGES)
 
-.PHONY: clean fclean leboncoin pics adcsv
+.PHONY: clean clean_pics leboncoin pics adcsv

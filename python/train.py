@@ -8,6 +8,7 @@ from fastai.interpret import Interpretation
 from fastai.learner import load_model,Learner,load_learner
 from torchvision.models import resnet34, resnet50
 
+import csv
 import tkinter
 from tkinter import messagebox
 import argparse
@@ -19,29 +20,53 @@ from Asker import *
 parser = argparse.ArgumentParser(description="Manually classify a few relevant images")
 parser.add_argument("-b", "--batch-size", type=int, help="Learning batch size", default=32)
 parser.add_argument("-m", "--model", type=str, help="The output", default="model.pkl")
-parser.add_argument("-c", "--csv", type=argparse.FileType('r'), help="Already classified images")
+parser.add_argument("-c", "--csv", type=str, help="Already classified images", default="labels.csv")
 parser.add_argument("-i", "--images", type=str, help="An image folder to train from", default="cache/images")
 args = parser.parse_args()
 
-#is_visible = load_learner(args.model.name, cpu=False) if args.model else None
-#feature = Features.from_string(args.feature)
+labeled = []
 
-#if args.csv:
-#    feature.from_opened_csv(args.csv)
-#    print("Using the {} labeled images from CSV".format(len(feature)))
+# Import labels
+try:
+    with open(args.csv, mode='r') as f:
+        reader = csv.reader(f, delimiter=',')
+        next(reader)
+        for row in reader:
+            labeled += [(row[0], row[1].split(';'))]
+    print("Imported", len(labeled), "classified images")
+except FileNotFoundError:
+    print("Starting from scratch")
 
-# Keep only images we did not already classified, and that the boolean model thinks are relevant
-#images = [img for img in get_image_files(args.input) if not str(img) in feature.images_paths and (is_visible == None or is_visible.predict(img)[2][1] > 0.7)]
-images = get_image_files(args.images)
-
-print("Dataset :", len(images), "images")
+images = [fname for fname in get_image_files(args.images) if not str(fname) in [e[0] for e in labeled]]
+print(len(images), "images left to categorize")
 
 ask = Asker(iter(images), Features.list)
-labeled = ask.show()
-print(labeled)
+labeled += ask.show()
+print(labeled[-5:])
+
+# Export
+with open(args.csv, mode='w') as f:
+    writer = csv.writer(f, delimiter=',')
+    writer.writerow(['Path','Labels'])
+    for fname, labels in labeled:
+        writer.writerow([fname, ';'.join(labels)])
+
+
 dataloader = ImageDataLoaders.from_lists('.', [e[0] for e in labeled], [e[1] for e in labeled],
                                          item_tfms=RandomResizedCrop(224, min_scale=0.7), batch_tfms=aug_transforms(),
                                          bs=args.batch_size, valid_pct=0.25)
+dataloader.show_batch()
+pyplot.show()
+classifier = cnn_learner(dataloader, resnet50, metrics=error_rate)
+#classifier.lr_find()
+#pyplot.show()
+classifier.fit(4)
+Interpretation.from_learner(classifier).plot_top_losses(9)
+pyplot.show()
+classifier.fit(4, lr=1e-4)
+classifier.fit(8, lr=1e-5)
+Interpretation.from_learner(classifier).plot_top_losses(9)
+pyplot.show()
 
 
 '''

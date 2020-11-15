@@ -1,7 +1,5 @@
-import csv
-
 START = 1997
-END = 2004
+END   = 2004
 
 class Feature:
 
@@ -44,7 +42,7 @@ class Features:
 
     options = Feature(
         "Options",
-        ["Wing", "Sunroof", "Speed regulator", "Hitch", "Oil thermometer"])
+        ["Wing", "Sunroof", "Speed regulator", "Hitch", "Oil thermometer", "Electric seats", "Heated seats"])
 
     dict = {'rims':rims, 'front_bumper':front_bumper, 'interior':interior, 'exterior':exterior, 'engine':engine, 'options':options}
     list = list(dict.values())

@@ -45,7 +45,6 @@ class Asker:
 
     def select(self, label, button):
         def callback(event):
-            print(label)
             self.selected += [label]
             button.color = (0.1, 0.8, 0.1)
         return callback
