@@ -1,3 +1,4 @@
+import matplotlib
 from matplotlib import pyplot
 from matplotlib.widgets import Button
 from PIL import Image as PIL_image
@@ -33,9 +34,10 @@ class Asker:
         pyplot.draw()
 
     def show(self):
+        matplotlib.rcParams['toolbar'] = 'None'
         self.figure, self.img_plt = pyplot.subplots()
-        pyplot.subplots_adjust(left=0.5, bottom=0.1, top=0.95)
-        self.figure.suptitle("What can you see ?")
+        pyplot.subplots_adjust(left=0.5, bottom=0.1, top=0.99, right=0.99)
+        self.figure.canvas.set_window_title("What can you see ?")
         self.add_buttons()
         self.draw()
         pyplot.show()
@@ -58,10 +60,10 @@ class Asker:
         sizes = [(total - 2 * outer - (count - 1) * inter) / count for count, outer, inter, total in zip(button_count, outer_margin, inter_margin, total_size)]
         slots = [[outer + i * (button + inter) for i in range(count)] for count, outer, inter, button in zip(button_count, outer_margin, inter_margin, sizes)]
         width = sizes[0]
-        colors = [(0.4, 0.4, 0.7), (0.4, 0.7, 0.4), (0.4, 0.7, 0.7), (0.6, 0.4, 0.7), (0.6, 0.7, 0.4)]
+        colors = [(0.4, 0.4, 0.7), (0.4, 0.7, 0.4), (0.4, 0.7, 0.7), (0.6, 0.4, 0.7), (0.6, 0.7, 0.4), (0.6, 0.7, 0.7)]
         for feature, height, x, slot, color in zip(self.features, sizes[1:], slots[0], slots[1:], colors):
             for label, y in zip(feature.values, slot):
                 self.buttons += [Button(pyplot.axes([x, y, width, height]), label, color=color, hovercolor=color)]
                 self.buttons[-1].on_clicked(self.select(label, self.buttons[-1]))
-        self.buttons += [Button(pyplot.axes([0.5, 0.005, 0.5, 0.09]), 'Next', color=(0.9, 1, 0.9))]
+        self.buttons += [Button(pyplot.axes([0.5, 0.005, 0.49, 0.09]), 'Next', color=(0.9, 1, 0.9))]
         self.buttons[-1].on_clicked(self.next)

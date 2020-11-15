@@ -18,7 +18,7 @@ from Asker import *
 
 parser = argparse.ArgumentParser(description="Manually classify a few relevant images")
 parser.add_argument("-b", "--batch-size", type=int, help="Learning batch size", default=32)
-parser.add_argument("-m", "--model", type=str, help="The output")
+parser.add_argument("-m", "--model", type=str, help="The output", default="model.pkl")
 parser.add_argument("-c", "--csv", type=argparse.FileType('r'), help="Already classified images")
 parser.add_argument("-i", "--images", type=str, help="An image folder to train from", default="cache/images")
 args = parser.parse_args()
@@ -37,7 +37,12 @@ images = get_image_files(args.images)
 print("Dataset :", len(images), "images")
 
 ask = Asker(iter(images), Features.list)
-ask.show()
+labeled = ask.show()
+print(labeled)
+dataloader = ImageDataLoaders.from_lists('.', [e[0] for e in labeled], [e[1] for e in labeled],
+                                         item_tfms=RandomResizedCrop(224, min_scale=0.7), batch_tfms=aug_transforms(),
+                                         bs=args.batch_size, valid_pct=0.25)
+
 
 '''
 seen = 0

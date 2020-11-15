@@ -6,14 +6,12 @@ END = 2004
 class Feature:
 
     def __init__(self, name, values, years = None):
-        self.name = name
+        self.name   = name
         self.values = values
-        self.years = years
-        self.label_from_string = {s:i for i,s in enumerate(values)}
+        self.years  = years
 
     def __len__(self):
         return len(self.values)
-
 
     def __str__(self):
         return "Feature('{}', {} values)".format(self.name, len(self.values))
@@ -21,12 +19,12 @@ class Feature:
 class Features:
     rims = Feature(
         "Rims",
-        ["BBS",         "Nautilus",  "Hoggar",    "Tacoma"],
+        ["BBS",         "Nautilus",  "Hoggar",    "Tacoma", "Custom"],
         [(START, 2001), (2002, END), (2001, END), (2003,END)])
 
     front_bumper = Feature(
         "Front Bumper",
-        ["Phase 1",     "Phase 2"],
+        ["Phase 1",     "Phase 2", "Custom"],
         [(START, 2003), (2003, END)])
 
     interior = Feature(
@@ -43,7 +41,11 @@ class Features:
         ["XU10J4R 135", "EW10J4 137", "HDi",       "2.2 160",   "V6 194",      "V6 210"],
         [(START, 1999), (1999, 2002), (2001, END), (2002, END), (START, 1999), (1999, END)])
 
-    dict = {'rims':rims, 'front_bumper':front_bumper, 'interior':interior, 'exterior':exterior, 'engine':engine}
+    option = Feature(
+        "Options",
+        ["Wing", "Sunroof", "Speed regulator", "Hitch"])
+
+    dict = {'rims':rims, 'front_bumper':front_bumper, 'interior':interior, 'exterior':exterior, 'engine':engine, 'misc':misc}
     list = list(dict.values())
 
     @classmethod
